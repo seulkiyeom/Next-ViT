@@ -19,8 +19,12 @@ import nextvit
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet test (and eval) a model')
-    parser.add_argument('config', help='test config file path')
-    parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument('--config', 
+        type=str, default='configs/mask_rcnn_nextvit_small_1x.py', #skyeom 
+        dest='config', help='test config file path')
+    parser.add_argument('--checkpoint', 
+        type=str, default='../checkpoints/detection/mask_rcnn_1x_nextvit_small.pth', #skyeom
+        dest='checkpoint', help='checkpoint file')
     parser.add_argument('--out', help='output result file in pickle format')
     parser.add_argument(
         '--fuse-conv-bn',
@@ -35,7 +39,7 @@ def parse_args():
         'submit it to the test server')
     parser.add_argument(
         '--eval',
-        type=str,
+        type=str, default='bbox', #skyeom
         nargs='+',
         help='evaluation metrics, which depends on the dataset, e.g., "bbox",'
         ' "segm", "proposal" for COCO, and "mAP", "recall" for PASCAL VOC')

@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser('Next-ViT export TensorRT engine script', add_h
 parser.add_argument(
     '--batch-size',
     type=int,
-    default=8,
+    default=1,
     help='batch size used to export TensorRT engine.'
 )
 parser.add_argument(
@@ -46,6 +46,7 @@ parser.add_argument(
 parser.add_argument(
     '--trtexec-path',
     type=str,
+    default='/opt/tensorrt/bin/trtexec',
     help='path to your trtexec tool.'
 )
 parser.add_argument(
@@ -109,6 +110,20 @@ def main():
         onnx_model = onnx.load("%s.onnx" % engine_file)
         model_simp, check = onnx_simplifier.simplify(onnx_model, check_n = 0)
         onnx.save(model_simp, "%s.onnx" % engine_file)
+
+    ##export fx file
+    from transformers.utils.fx import symbolic_trace
+    import logging
+    try:
+        model = symbolic_trace(model.eval(),['x'])
+        # torch.save(model, _save_path)
+        logging.info("GraphModule conversion succeeded.")
+        # print('graphmodule save at train.py', _save_path)
+        return True
+    except Exception as e:
+        logging.error(e)
+        logging.error("GraphModule conversion failed. Model not saved.")
+        return False
 
     import subprocess
 

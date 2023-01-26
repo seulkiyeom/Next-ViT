@@ -14,8 +14,12 @@ import nextvit
 def parse_args():
     parser = argparse.ArgumentParser(
         description='mmseg test (and eval) a model')
-    parser.add_argument('config', help='test config file path')
-    parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument('--config', 
+        type=str, default='configs/fpn_512_nextvit_small_80k.py', #skyeom 
+        dest='config', help='test config file path')
+    parser.add_argument('--checkpoint', 
+        type=str, default='../checkpoints/segmentation/fpn_80k_nextvit_small.pth', #skyeom
+        dest='checkpoint', help='checkpoint file')
     parser.add_argument(
         '--aug-test', action='store_true', help='Use Flip and Multi scale aug')
     parser.add_argument('--out', help='output result file in pickle format')
@@ -27,7 +31,7 @@ def parse_args():
         'submit it to the test server')
     parser.add_argument(
         '--eval',
-        type=str,
+        type=str, default='mIoU', #skyeom
         nargs='+',
         help='evaluation metrics, which depends on the dataset, e.g., "mIoU"'
         ' for generic datasets, and "cityscapes" for Cityscapes')

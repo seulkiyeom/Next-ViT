@@ -7,7 +7,7 @@ model = dict(
                   norm_eval=False,
                   with_extra_norm=True,
                   norm_cfg=norm_cfg,
-                  resume='../checkpoints/nextvit_small_in1k_224.pth',),
+                  resume='../checkpoints/classification/nextvit_small_in1k_224.pth',),
     neck=dict(
         type='FPN',
         in_channels=[96, 256, 512, 1024],
@@ -32,7 +32,7 @@ model = dict(
 
 # dataset settings
 dataset_type = 'ADE20KDataset'
-data_root = './data/ade/ADEChallengeData2016'
+data_root = '../data/ADEChallengeData2016'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 crop_size = (512, 512)

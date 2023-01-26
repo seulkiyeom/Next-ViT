@@ -285,9 +285,11 @@ class NextViT(nn.Module):
                  ):
         super(NextViT, self).__init__()
         self.use_checkpoint = use_checkpoint
+        
         self.frozen_stages = frozen_stages
         self.with_extra_norm = with_extra_norm
         self.norm_eval = norm_eval
+
         self.stage_out_channels = [[96] * (depths[0]),
                                    [192] * (depths[1] - 1) + [256],
                                    [384, 384, 384, 384, 512] * (depths[2] // 5),
@@ -341,7 +343,7 @@ class NextViT(nn.Module):
                     self.stage_out_channels[stage_id][-1], eps=NORM_EPS))
             self.extra_norm_list = nn.Sequential(*self.extra_norm_list)
 
-        # self.norm = nn.BatchNorm2d(output_channel, eps=NORM_EPS)
+        self.norm = nn.BatchNorm2d(output_channel, eps=NORM_EPS)
         #
         # self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         # self.proj_head = nn.Sequential(
@@ -448,3 +450,9 @@ class nextvit_large(NextViT):
         super(nextvit_large, self).__init__(
             stem_chs=[64, 32, 64], depths=[3, 4, 30, 3], path_dropout=0.2, resume=resume, **kwargs
         )
+
+if __name__ == '__main__':
+    input_tensor = torch.zeros((1, 3, 224, 224), dtype=torch.float32)
+    model = nextvit_small()
+    output = model(input_tensor)
+    print(output.shape)

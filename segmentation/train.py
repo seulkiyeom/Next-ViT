@@ -190,6 +190,7 @@ def main():
                 f'deterministic: {args.deterministic}')
     set_random_seed(seed, deterministic=args.deterministic)
     cfg.seed = seed
+    cfg.device = 'cuda'
     meta['seed'] = seed
     meta['exp_name'] = osp.basename(args.config)
 
