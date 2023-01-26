@@ -1,0 +1,855 @@
+2023-01-24 16:41:19,955 - mmseg - INFO - Multi-processing start method is `None`
+2023-01-24 16:41:19,956 - mmseg - INFO - OpenCV num_threads is `48
+2023-01-24 16:41:19,957 - mmseg - INFO - OMP num threads is 1
+2023-01-24 16:41:20,026 - mmseg - INFO - Environment info:
+------------------------------------------------------------
+sys.platform: linux
+Python: 3.8.10 (default, Jun 22 2022, 20:18:18) [GCC 9.4.0]
+CUDA available: True
+GPU 0,1: NVIDIA A100 80GB PCIe
+CUDA_HOME: /usr/local/cuda
+NVCC: Cuda compilation tools, release 11.8, V11.8.89
+GCC: x86_64-linux-gnu-gcc (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0
+PyTorch: 1.13.0a0+936e930
+PyTorch compiling details: PyTorch built with:
+  - GCC 9.4
+  - C++ Version: 201402
+  - Intel(R) oneAPI Math Kernel Library Version 2021.1-Product Build 20201104 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v2.6.0 (Git Hash N/A)
+  - OpenMP 201511 (a.k.a. OpenMP 4.5)
+  - LAPACK is enabled (usually provided by MKL)
+  - NNPACK is enabled
+  - CPU capability usage: AVX2
+  - CUDA Runtime 11.8
+  - NVCC architecture flags: -gencode;arch=compute_52,code=sm_52;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_61,code=sm_61;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86;-gencode;arch=compute_90,code=sm_90;-gencode;arch=compute_90,code=compute_90
+  - CuDNN 8.7
+  - Magma 2.6.2
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.8, CUDNN_VERSION=8.7.0, CXX_COMPILER=/usr/bin/c++, CXX_FLAGS=-fno-gnu-unique -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -fopenmp -DNDEBUG -DUSE_KINETO -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -DEDGE_PROFILER_USE_KINETO -O2 -fPIC -Wno-narrowing -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wunused-local-typedefs -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-error=deprecated-declarations -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=redundant-decls -Wno-error=old-style-cast -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_VERSION=1.13.0, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=ON, USE_NCCL=ON, USE_NNPACK=ON, USE_OPENMP=ON, USE_ROCM=OFF, 
+
+TorchVision: 0.15.0a0
+OpenCV: 4.6.0
+MMCV: 1.7.1
+MMCV Compiler: GCC 9.4
+MMCV CUDA Compiler: 11.8
+MMSegmentation: 0.30.0+922e771
+------------------------------------------------------------
+
+2023-01-24 16:41:20,027 - mmseg - INFO - Distributed training: True
+2023-01-24 16:41:20,192 - mmseg - INFO - Config:
+norm_cfg = dict(type='SyncBN', requires_grad=True)
+model = dict(
+    type='EncoderDecoder',
+    backbone=dict(
+        type='nextvit_small',
+        frozen_stages=-1,
+        norm_eval=False,
+        with_extra_norm=True,
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        resume='../checkpoints/classification/nextvit_small_in1k_224.pth'),
+    neck=dict(
+        type='FPN',
+        in_channels=[96, 256, 512, 1024],
+        out_channels=256,
+        num_outs=4),
+    decode_head=dict(
+        type='SegformerHead',
+        in_channels=[256, 256, 256, 256],
+        in_index=[0, 1, 2, 3],
+        channels=128,
+        dropout_ratio=0.1,
+        num_classes=150,
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        align_corners=False,
+        loss_decode=dict(
+            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+    train_cfg=dict(),
+    test_cfg=dict(mode='whole'))
+dataset_type = 'ADE20KDataset'
+data_root = '../data/ADEChallengeData2016'
+img_norm_cfg = dict(
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+crop_size = (512, 512)
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
+    dict(type='Resize', img_scale=(2048, 512), ratio_range=(0.5, 2.0)),
+    dict(type='RandomCrop', crop_size=(512, 512), cat_max_ratio=0.75),
+    dict(type='RandomFlip', prob=0.5),
+    dict(type='PhotoMetricDistortion'),
+    dict(
+        type='Normalize',
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        to_rgb=True),
+    dict(type='Pad', size=(512, 512), pad_val=0, seg_pad_val=255),
+    dict(type='DefaultFormatBundle'),
+    dict(type='Collect', keys=['img', 'gt_semantic_seg'])
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(2048, 512),
+        flip=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            dict(type='RandomFlip'),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', keys=['img'])
+        ])
+]
+data = dict(
+    samples_per_gpu=16,
+    workers_per_gpu=4,
+    train=dict(
+        type='ADE20KDataset',
+        data_root='../data/ADEChallengeData2016',
+        img_dir='images/training',
+        ann_dir='annotations/training',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='LoadAnnotations', reduce_zero_label=True),
+            dict(type='Resize', img_scale=(2048, 512), ratio_range=(0.5, 2.0)),
+            dict(type='RandomCrop', crop_size=(512, 512), cat_max_ratio=0.75),
+            dict(type='RandomFlip', prob=0.5),
+            dict(type='PhotoMetricDistortion'),
+            dict(
+                type='Normalize',
+                mean=[123.675, 116.28, 103.53],
+                std=[58.395, 57.12, 57.375],
+                to_rgb=True),
+            dict(type='Pad', size=(512, 512), pad_val=0, seg_pad_val=255),
+            dict(type='DefaultFormatBundle'),
+            dict(type='Collect', keys=['img', 'gt_semantic_seg'])
+        ]),
+    val=dict(
+        type='ADE20KDataset',
+        data_root='../data/ADEChallengeData2016',
+        img_dir='images/validation',
+        ann_dir='annotations/validation',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(
+                type='MultiScaleFlipAug',
+                img_scale=(2048, 512),
+                flip=False,
+                transforms=[
+                    dict(type='Resize', keep_ratio=True),
+                    dict(type='RandomFlip'),
+                    dict(
+                        type='Normalize',
+                        mean=[123.675, 116.28, 103.53],
+                        std=[58.395, 57.12, 57.375],
+                        to_rgb=True),
+                    dict(type='ImageToTensor', keys=['img']),
+                    dict(type='Collect', keys=['img'])
+                ])
+        ]),
+    test=dict(
+        type='ADE20KDataset',
+        data_root='../data/ADEChallengeData2016',
+        img_dir='images/validation',
+        ann_dir='annotations/validation',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(
+                type='MultiScaleFlipAug',
+                img_scale=(2048, 512),
+                flip=False,
+                transforms=[
+                    dict(type='Resize', keep_ratio=True),
+                    dict(type='RandomFlip'),
+                    dict(
+                        type='Normalize',
+                        mean=[123.675, 116.28, 103.53],
+                        std=[58.395, 57.12, 57.375],
+                        to_rgb=True),
+                    dict(type='ImageToTensor', keys=['img']),
+                    dict(type='Collect', keys=['img'])
+                ])
+        ]))
+optimizer = dict(type='AdamW', lr=0.0001, weight_decay=0.0001)
+optimizer_config = dict(grad_clip=None)
+lr_config = dict(policy='poly', power=0.9, min_lr=1e-06, by_epoch=False)
+gpu_multiples = 2
+runner = dict(type='IterBasedRunner', max_iters=40000)
+checkpoint_config = dict(by_epoch=False, interval=4000)
+evaluation = dict(interval=4000, metric='mIoU')
+log_config = dict(
+    interval=50, hooks=[dict(type='TextLoggerHook', by_epoch=False)])
+dist_params = dict(backend='nccl')
+log_level = 'INFO'
+load_from = None
+resume_from = None
+workflow = [('train', 1)]
+cudnn_benchmark = True
+find_unused_parameters = True
+work_dir = './work_dirs/segformer_512_nextvit_small_80k'
+gpu_ids = range(0, 2)
+auto_resume = False
+
+2023-01-24 16:41:20,820 - mmseg - INFO - Set random seed to 1451492389, deterministic: False
+2023-01-24 16:41:21,469 - mmseg - INFO - EncoderDecoder(
+  (backbone): nextvit_small(
+    (stem): Sequential(
+      (0): ConvBNReLU(
+        (conv): Conv2d(3, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (norm): SyncBatchNorm(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (1): ConvBNReLU(
+        (conv): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (norm): SyncBatchNorm(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (2): ConvBNReLU(
+        (conv): Conv2d(32, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (norm): SyncBatchNorm(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+      (3): ConvBNReLU(
+        (conv): Conv2d(64, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (norm): SyncBatchNorm(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (act): ReLU(inplace=True)
+      )
+    )
+    (features): Sequential(
+      (0): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Conv2d(64, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(96, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=3, bias=False)
+          (norm): SyncBatchNorm(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.000)
+        (norm): SyncBatchNorm(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(288, 96, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.000)
+      )
+      (1): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(96, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=3, bias=False)
+          (norm): SyncBatchNorm(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.011)
+        (norm): SyncBatchNorm(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(288, 96, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.011)
+      )
+      (2): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(96, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=3, bias=False)
+          (norm): SyncBatchNorm(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(96, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.021)
+        (norm): SyncBatchNorm(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(96, 288, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(288, 96, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.021)
+      )
+      (3): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): AvgPool2d(kernel_size=(2, 2), stride=2, padding=0)
+          (conv): Conv2d(96, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(192, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=6, bias=False)
+          (norm): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.032)
+        (norm): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(576, 192, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.032)
+      )
+      (4): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(192, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=6, bias=False)
+          (norm): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.042)
+        (norm): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(576, 192, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.042)
+      )
+      (5): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(192, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=6, bias=False)
+          (norm): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(192, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.053)
+        (norm): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(192, 576, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(576, 192, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.053)
+      )
+      (6): NTB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (norm1): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (e_mhsa): E_MHSA(
+          (q): Linear(in_features=192, out_features=192, bias=True)
+          (k): Linear(in_features=192, out_features=192, bias=True)
+          (v): Linear(in_features=192, out_features=192, bias=True)
+          (proj): Linear(in_features=192, out_features=192, bias=True)
+          (attn_drop): Dropout(p=0, inplace=False)
+          (proj_drop): Dropout(p=0, inplace=False)
+          (sr): AvgPool1d(kernel_size=(16,), stride=(16,), padding=(0,))
+          (norm): SyncBatchNorm(192, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhsa_path_dropout): DropPath(drop_prob=0.047)
+        (projection): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Conv2d(192, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=2, bias=False)
+          (norm): SyncBatchNorm(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (mhca_path_dropout): DropPath(drop_prob=0.016)
+        (norm2): SyncBatchNorm(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.063)
+      )
+      (7): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): AvgPool2d(kernel_size=(2, 2), stride=2, padding=0)
+          (conv): Conv2d(256, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=12, bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.074)
+        (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1152, 384, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.074)
+      )
+      (8): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=12, bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.084)
+        (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1152, 384, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.084)
+      )
+      (9): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=12, bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.095)
+        (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1152, 384, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.095)
+      )
+      (10): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=12, bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.105)
+        (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1152, 384, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.105)
+      )
+      (11): NTB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (norm1): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (e_mhsa): E_MHSA(
+          (q): Linear(in_features=384, out_features=384, bias=True)
+          (k): Linear(in_features=384, out_features=384, bias=True)
+          (v): Linear(in_features=384, out_features=384, bias=True)
+          (proj): Linear(in_features=384, out_features=384, bias=True)
+          (attn_drop): Dropout(p=0, inplace=False)
+          (proj_drop): Dropout(p=0, inplace=False)
+          (sr): AvgPool1d(kernel_size=(4,), stride=(4,), padding=(0,))
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhsa_path_dropout): DropPath(drop_prob=0.087)
+        (projection): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Conv2d(384, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=4, bias=False)
+          (norm): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (mhca_path_dropout): DropPath(drop_prob=0.029)
+        (norm2): SyncBatchNorm(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1024, 512, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.116)
+      )
+      (12): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Conv2d(512, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=12, bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.126)
+        (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1152, 384, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.126)
+      )
+      (13): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=12, bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.137)
+        (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1152, 384, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.137)
+      )
+      (14): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=12, bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.147)
+        (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1152, 384, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.147)
+      )
+      (15): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=12, bias=False)
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.158)
+        (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(384, 1152, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1152, 384, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.158)
+      )
+      (16): NTB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (norm1): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (e_mhsa): E_MHSA(
+          (q): Linear(in_features=384, out_features=384, bias=True)
+          (k): Linear(in_features=384, out_features=384, bias=True)
+          (v): Linear(in_features=384, out_features=384, bias=True)
+          (proj): Linear(in_features=384, out_features=384, bias=True)
+          (attn_drop): Dropout(p=0, inplace=False)
+          (proj_drop): Dropout(p=0, inplace=False)
+          (sr): AvgPool1d(kernel_size=(4,), stride=(4,), padding=(0,))
+          (norm): SyncBatchNorm(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhsa_path_dropout): DropPath(drop_prob=0.126)
+        (projection): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Conv2d(384, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=4, bias=False)
+          (norm): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (mhca_path_dropout): DropPath(drop_prob=0.042)
+        (norm2): SyncBatchNorm(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(1024, 512, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.168)
+      )
+      (17): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): AvgPool2d(kernel_size=(2, 2), stride=2, padding=0)
+          (conv): Conv2d(512, 768, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(768, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(768, 768, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=24, bias=False)
+          (norm): SyncBatchNorm(768, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(768, 768, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.179)
+        (norm): SyncBatchNorm(768, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(768, 2304, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(2304, 768, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.179)
+      )
+      (18): NCB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(768, 768, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=24, bias=False)
+          (norm): SyncBatchNorm(768, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(768, 768, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (attention_path_dropout): DropPath(drop_prob=0.189)
+        (norm): SyncBatchNorm(768, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(768, 2304, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(2304, 768, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.189)
+      )
+      (19): NTB(
+        (patch_embed): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Identity()
+          (norm): Identity()
+        )
+        (norm1): SyncBatchNorm(768, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (e_mhsa): E_MHSA(
+          (q): Linear(in_features=768, out_features=768, bias=True)
+          (k): Linear(in_features=768, out_features=768, bias=True)
+          (v): Linear(in_features=768, out_features=768, bias=True)
+          (proj): Linear(in_features=768, out_features=768, bias=True)
+          (attn_drop): Dropout(p=0, inplace=False)
+          (proj_drop): Dropout(p=0, inplace=False)
+        )
+        (mhsa_path_dropout): DropPath(drop_prob=0.150)
+        (projection): PatchEmbed(
+          (avgpool): Identity()
+          (conv): Conv2d(768, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (norm): SyncBatchNorm(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (mhca): MHCA(
+          (group_conv3x3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=8, bias=False)
+          (norm): SyncBatchNorm(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (act): ReLU(inplace=True)
+          (projection): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+        (mhca_path_dropout): DropPath(drop_prob=0.050)
+        (norm2): SyncBatchNorm(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (mlp): Mlp(
+          (conv1): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(1, 1))
+          (act): ReLU(inplace=True)
+          (conv2): Conv2d(2048, 1024, kernel_size=(1, 1), stride=(1, 1))
+          (drop): Dropout(p=0, inplace=False)
+        )
+        (mlp_path_dropout): DropPath(drop_prob=0.200)
+      )
+    )
+    (extra_norm_list): Sequential(
+      (0): SyncBatchNorm(96, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (1): SyncBatchNorm(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (2): SyncBatchNorm(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (3): SyncBatchNorm(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (norm): SyncBatchNorm(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  )
+  (neck): FPN(
+    (lateral_convs): ModuleList(
+      (0): ConvModule(
+        (conv): Conv2d(96, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (1): ConvModule(
+        (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (2): ConvModule(
+        (conv): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (3): ConvModule(
+        (conv): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1))
+      )
+    )
+    (fpn_convs): ModuleList(
+      (0): ConvModule(
+        (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+      (1): ConvModule(
+        (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+      (2): ConvModule(
+        (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+      (3): ConvModule(
+        (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+    )
+  )
+  init_cfg={'type': 'Xavier', 'layer': 'Conv2d', 'distribution': 'uniform'}
+  (decode_head): SegformerHead(
+    input_transform=multiple_select, ignore_index=255, align_corners=False
+    (loss_decode): CrossEntropyLoss(avg_non_ignore=False)
+    (conv_seg): Conv2d(128, 150, kernel_size=(1, 1), stride=(1, 1))
+    (dropout): Dropout2d(p=0.1, inplace=False)
+    (convs): ModuleList(
+      (0): ConvModule(
+        (conv): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (activate): ReLU(inplace=True)
+      )
+      (1): ConvModule(
+        (conv): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (activate): ReLU(inplace=True)
+      )
+      (2): ConvModule(
+        (conv): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (activate): ReLU(inplace=True)
+      )
+      (3): ConvModule(
+        (conv): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (activate): ReLU(inplace=True)
+      )
+    )
+    (fusion_conv): ConvModule(
+      (conv): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+      (bn): SyncBatchNorm(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+      (activate): ReLU(inplace=True)
+    )
+  )
+  init_cfg={'type': 'Normal', 'std': 0.01, 'override': {'name': 'conv_seg'}}
+)
+2023-01-24 16:41:21,823 - mmseg - INFO - Loaded 20210 images
+2023-01-24 16:41:22,077 - mmseg - INFO - Loaded 2000 images
+2023-01-24 16:41:22,078 - mmseg - INFO - Start running, host: root@3827bbd0db46, work_dir: /root/skyeom/home/skyeom/PycharmProjects/Next-ViT/segmentation/work_dirs/segformer_512_nextvit_small_80k
+2023-01-24 16:41:22,078 - mmseg - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) PolyLrUpdaterHook                  
+(NORMAL      ) CheckpointHook                     
+(LOW         ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) PolyLrUpdaterHook                  
+(LOW         ) IterTimerHook                      
+(LOW         ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) PolyLrUpdaterHook                  
+(LOW         ) IterTimerHook                      
+(LOW         ) DistEvalHook                       
+ -------------------- 
+after_train_iter:
+(ABOVE_NORMAL) OptimizerHook                      
+(NORMAL      ) CheckpointHook                     
+(LOW         ) IterTimerHook                      
+(LOW         ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) CheckpointHook                     
+(LOW         ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_val_epoch:
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+before_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_epoch:
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+after_run:
+(VERY_LOW    ) TextLoggerHook                     
+ -------------------- 
+2023-01-24 16:41:22,078 - mmseg - INFO - workflow: [('train', 1)], max: 40000 iters
+2023-01-24 16:41:22,078 - mmseg - INFO - Checkpoints will be saved to /root/skyeom/home/skyeom/PycharmProjects/Next-ViT/segmentation/work_dirs/segformer_512_nextvit_small_80k by HardDiskBackend.
+2023-01-24 16:41:59,767 - mmseg - INFO - Iter [50/40000]	lr: 9.989e-05, eta: 6:30:42, time: 0.587, data_time: 0.019, memory: 45758, decode.loss_ce: 3.7849, decode.acc_seg: 32.6860, loss: 3.7849
+2023-01-24 16:42:17,516 - mmseg - INFO - Iter [100/40000]	lr: 9.978e-05, eta: 5:13:08, time: 0.355, data_time: 0.011, memory: 45758, decode.loss_ce: 3.2681, decode.acc_seg: 47.6234, loss: 3.2681
